@@ -99,3 +99,7 @@ It will generate the output file in **output/** folder
 
 - `python inference.py --webcam True` **[Without background image]**
 - `python inference.py --webcam True --background True` **[With background image]**
+
+## Reference 
+
+* [A Trimap-Free Solution for Portrait Matting in Real Time under Changing Scenes](https://github.com/ZHKKKe/MODNet)
