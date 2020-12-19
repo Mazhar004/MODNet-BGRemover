@@ -1,4 +1,4 @@
-# MODNet_BGRemover
+# MODNet Background Remover
 
 ## Application
 
@@ -57,7 +57,7 @@ A deep learning approach to remove background and adding new background image
 <td><b>Before removing the background from video</b></td>
 <td><b>After replacing the background with new image in this video</b></td>
 </tr>
-<tr>><img src="assets/sample_image/sample.gif" alt="Video" width="460" height="500"/></td>
+<td><img src="assets/sample_image/sample.gif" alt="Video" width="460" height="500"/></td>
 <td colspan=2><img src="output/sample.gif" alt="Video" width="920" height="400"/></td>
 </tr>
 <table>
