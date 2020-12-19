@@ -40,7 +40,7 @@ A deep learning approach to remove background and adding new background image
 
 ### Python Version
 
-- Python == 3.8 (Any version of Python3 will work fine)
+- Python == 3.8
 
 ### Library Installation
 
