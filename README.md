@@ -9,7 +9,7 @@ A deep learning approach to remove background and adding new background image
 
 ### Demo
 
-<table =>
+<table>
 <tr align="center">
 <td><b>Before removing the background</b></td>
 <td><b>After removing the background</b></td>
