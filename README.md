@@ -7,6 +7,35 @@ A deep learning approach to remove background and adding new background image
 - Remove background from **images,videos & live webcam**
 - Adding new background to those **images,videos & webcam footage**
 
+### Demo
+
+<table =>
+<tr align="center">
+<td><b>Before removing the background</b></td>
+<td><b>After removing the background</b></td>
+</tr>
+<tr align="center">
+<td><img src="assets/sample_image/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
+<td><img src="output/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
+</tr>
+<tr align="center">
+<td><b>Before removing the background</b></td>
+<td><b>After replacing the background with new image</b></td>
+</tr>
+<tr align="center">
+<td><img src="assets/sample_image/male.jpeg" alt="Male.jpg" width="460" height="500"/></td>
+<td><img src="output/male.jpeg" alt="Male.jpg" width="460" height="500"/></td>
+</tr>
+<tr align="center">
+<td><b>Before removing the background from video</b></td>
+<td><b>After replacing the background with new image in this video</b></td>
+</tr>
+<tr align="center">
+<td colspan=2><img src="output/sample.gif" alt="Video" width="920" height="400"/></td>
+</tr>
+<table>
+
+
 ## Installation
 
 ### Python Version
@@ -33,34 +62,6 @@ A deep learning approach to remove background and adding new background image
   - `pip install -r requirements.txt`
 
 ## Inference
-
-### Demo
-
-<table style="text-align:center;font-size:bold">
-<tr>
-<td><b>Before removing the background</b></td>
-<td><b>After removing the background</b></td>
-</tr>
-<tr>
-<td><img src="assets/sample_image/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
-<td><img src="output/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
-</tr>
-<tr>
-<td><b>Before removing the background</b></td>
-<td><b>After replacing the background with new image</b></td>
-</tr>
-<tr>
-<td><img src="assets/sample_image/male.jpeg" alt="Male.jpg" width="460" height="500"/></td>
-<td><img src="output/male.jpeg" alt="Male.jpg" width="460" height="500"/></td>
-</tr>
-<tr>
-<td><b>Before removing the background from video</b></td>
-<td><b>After replacing the background with new image in this video</b></td>
-</tr>
-<td><img src="assets/sample_image/sample.gif" alt="Video" width="460" height="500"/></td>
-<td colspan=2><img src="output/sample.gif" alt="Video" width="920" height="400"/></td>
-</tr>
-<table>
 
 ### Image
 
