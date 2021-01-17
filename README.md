@@ -9,7 +9,7 @@ A deep learning approach to remove background and adding new background image
 
 ### Demo
 
-<table =>
+<table>
 <tr align="center">
 <td><b>Before removing the background</b></td>
 <td><b>After removing the background</b></td>
@@ -35,27 +35,31 @@ A deep learning approach to remove background and adding new background image
 </tr>
 <table>
 
-
 ## Installation
 
 ### Python Version
 
-- Python == 3.8 (Any version of Python3 will work fine)
+- Python == 3.8
 
-### Library Installation
+### Virtual Environment
 
 #### Windows
 
-- Library Install
-  - `pip install --upgrade pip`
-  - `pip install --upgrade setuptools`
-  - `pip install -r requirements.txt`
+- `python -m venv venv`
+- `.\venv\Scripts\activate`
+- If any problem for scripts activation
+  - Execute following command in administration mode
+    - `Set-ExecutionPolicy Unrestricted -Force`
+  - Later you can revert the change
+    - `Set-ExecutionPolicy restricted -Force`
 
 #### Linux
 
-- Virtual Environment
-  - `python -m venv venv`
-  - `source venv/bin/activate`
+- `python -m venv venv`
+- `source venv/bin/activate`
+
+### Library Installation
+
 - Library Install
   - `pip install --upgrade pip`
   - `pip install --upgrade setuptools`
@@ -99,3 +103,9 @@ It will generate the output file in **output/** folder
 
 - `python inference.py --webcam True` **[Without background image]**
 - `python inference.py --webcam True --background True` **[With background image]**
+
+## Reference
+
+- [A Trimap-Free Solution for Portrait Matting in Real Time under Changing Scenes](https://github.com/ZHKKKe/MODNet)
+- Sample Female photo by <span><a href="https://unsplash.com/@michaeldam?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Michael Dam</a> on <a href="https://unsplash.com/?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
+- Sample Male photo by <span> <a href="https://unsplash.com/@erik_lucatero?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Erik Lucatero</a> on <a href="https://unsplash.com/?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
