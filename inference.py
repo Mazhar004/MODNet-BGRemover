@@ -106,6 +106,8 @@ class BGRemove():
         else:
             back_image = np.full(self.original_im.shape, 255.0)
 
+        self.alpha = np.uint8(matte[:,:,0]*255)
+
         matte = matte * self.original_im + (1 - matte) * back_image
         return matte
 
@@ -215,9 +217,16 @@ class BGRemove():
             cv2.imshow('MODNet - WebCam [Press "Q" To Exit]', full_image)
 
     def save(self, matte, output_path='output/'):
-        path = os.path.join(output_path, self.im_name)
+        name = '.'.join(self.im_name.split('.')[:-1])+'.png'
+        path = os.path.join(output_path, name)
+
+        w,h,c = matte.shape
+        png_image = np.zeros((w,h,4))
+        png_image[:,:,:3] = matte
+        png_image[:,:,3] = self.alpha
+        
         try:
-            cv2.imwrite(path, matte)
+            cv2.imwrite(path, png_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
             return "Successfully saved {}".format(path)
         except:
             return "Error while saving {}".format(path)

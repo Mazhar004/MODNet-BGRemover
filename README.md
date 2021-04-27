@@ -16,7 +16,7 @@ A deep learning approach to remove background and adding new background image
 </tr>
 <tr align="center">
 <td><img src="assets/sample_image/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
-<td><img src="output/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
+<td><img src="output/female.png" alt="Female.png" width="460" height="500"/></td>
 </tr>
 <tr align="center">
 <td><b>Before removing the background</b></td>
