@@ -65,6 +65,10 @@ A deep learning approach to remove background and adding new background image
   - `pip install --upgrade setuptools`
   - `pip install -r requirements.txt`
 
+### Pretrained Weights Download
+- [Weights Detail](pretrained/README.md)
+
+
 ## Inference
 
 ### Image
