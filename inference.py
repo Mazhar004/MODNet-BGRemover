@@ -31,7 +31,7 @@ class BGRemove():
     )
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # create MODNet and load the pre-trained ckpt
+    # create MODNet and load the pre-trained ckpt
     modnet = MODNet(backbone_pretrained=False)
     modnet = nn.DataParallel(modnet)
     if device == 'cuda':
@@ -106,7 +106,7 @@ class BGRemove():
         else:
             back_image = np.full(self.original_im.shape, 255.0)
 
-        self.alpha = np.uint8(matte[:,:,0]*255)
+        self.alpha = np.uint8(matte[:, :, 0]*255)
 
         matte = matte * self.original_im + (1 - matte) * back_image
         return matte
@@ -122,7 +122,7 @@ class BGRemove():
 
         if save:
             matte = np.uint8(matte)
-            return self.save(matte, output)
+            return self.save(matte, output, background)
         else:
             h, w, _ = matte.shape
             r_h, r_w = 720, int((w / h) * 720)
@@ -130,7 +130,7 @@ class BGRemove():
             matte = cv2.resize(matte, (r_w, r_h), cv2.INTER_AREA)
 
             full_image = np.uint8(np.concatenate((image, matte), axis=1))
-            self.save(full_image, output)
+            self.save(full_image, output, background)
             exit_key = ord('q')
             while True:
                 if cv2.waitKey(exit_key) & 255 == exit_key:
@@ -188,7 +188,7 @@ class BGRemove():
                 im = self.pre_process(im)
                 _, _, matte = BGRemove.modnet(im, inference=False)
                 matte = self.post_process(matte, background)
-                status = self.save(matte, output)
+                status = self.save(matte, output, background)
                 print(status)
             except:
                 print('There is an error for {} file/folder'.format(foldername+filename))
@@ -216,20 +216,27 @@ class BGRemove():
                 break
             cv2.imshow('MODNet - WebCam [Press "Q" To Exit]', full_image)
 
-    def save(self, matte, output_path='output/'):
+    def save(self, matte, output_path='output/', background=False):
         name = '.'.join(self.im_name.split('.')[:-1])+'.png'
         path = os.path.join(output_path, name)
 
-        w,h,c = matte.shape
-        png_image = np.zeros((w,h,4))
-        png_image[:,:,:3] = matte
-        png_image[:,:,3] = self.alpha
-        
-        try:
-            cv2.imwrite(path, png_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-            return "Successfully saved {}".format(path)
-        except:
-            return "Error while saving {}".format(path)
+        if background:
+            try:
+                cv2.imwrite(path, matte)
+                return "Successfully saved {}".format(path)
+            except:
+                return "Error while saving {}".format(path)
+        else:
+            w, h, _ = matte.shape
+            png_image = np.zeros((w, h, 4))
+            png_image[:, :, :3] = matte
+            png_image[:, :, 3] = self.alpha
+            try:
+                cv2.imwrite(path, png_image, [
+                            int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                return "Successfully saved {}".format(path)
+            except:
+                return "Error while saving {}".format(path)
 
 
 if __name__ == "__main__":
