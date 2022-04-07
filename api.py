@@ -40,5 +40,44 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'files[]' not in request.files:
+            resp = jsonify({'message': 'No file part in the request'})
+            resp.status_code = 400
+
+        files = request.files.getlist('files[]')
+        errors = {}
+        success = False
+        file = files[0]
+        filename = ""
+
+        if file and allowed_file(file.filename):
+            ts = time.time()
+            filename = f"{str(ts)}-{file.filename}"
+            filename = secure_filename(filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            success = True
+        else:
+            errors['message'] = 'File type is not allowed'
+
+        if success and errors:
+            resp = jsonify({"filepath": f"{app.config['UPLOAD_FOLDER']}/{filename}", "filename": filename,
+                            'message': 'Files successfully uploaded'})
+            resp.status_code = 206
+        if success:
+            resp = jsonify({"filepath": f"{app.config['UPLOAD_FOLDER']}/{filename}", "filename": filename,
+                            'message': 'Files successfully uploaded'})
+            resp.status_code = 201
+        else:
+            resp = jsonify(errors)
+            resp.status_code = 400
+        resp.html = render_template(HOMEPAGE)
+        return resp
+
+    return render_template(HOMEPAGE)
+
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8000)
