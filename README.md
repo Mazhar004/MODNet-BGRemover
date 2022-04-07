@@ -12,14 +12,6 @@ A deep learning approach to remove background and adding new background image
 <table>
 <tr align="center">
 <td><b>Before removing the background</b></td>
-<td><b>After removing the background</b></td>
-</tr>
-<tr align="center">
-<td><img src="assets/sample_image/female.jpeg" alt="Female.jpg" width="460" height="500"/></td>
-<td><img src="output/female.png" alt="Female.png" width="460" height="500"/></td>
-</tr>
-<tr align="center">
-<td><b>Before removing the background</b></td>
 <td><b>After replacing the background with new image</b></td>
 </tr>
 <tr align="center">
@@ -32,6 +24,18 @@ A deep learning approach to remove background and adding new background image
 </tr>
 <tr align="center">
 <td colspan=2><img src="output/sample.gif" alt="Video" width="920" height="400"/></td>
+</tr>
+<table>
+
+### Web View
+<table>
+<tr align="center">
+<td><b>Before removing the background</b></td>
+<td><b>After removing the background</b></td>
+</tr>
+<tr align="center">
+<td><img src="assets/sample_image/female.jpeg" alt="Female.jpeg" width="460" height="500"/></td>
+<td><img src="output/web_view.png" alt="Female.png" width="460" height="500"/></td>
 </tr>
 <table>
 
@@ -64,6 +68,8 @@ A deep learning approach to remove background and adding new background image
   - `pip install --upgrade pip`
   - `pip install --upgrade setuptools`
   - `pip install -r requirements.txt`
+  - To run in **web interface**
+    - `pip install -r web_requirements.txt`
 
 ### Pretrained Weights Download
 - [Weights Detail](pretrained/README.md)
@@ -107,6 +113,12 @@ It will generate the output file in **output/** folder
 
 - `python inference.py --webcam True` **[Without background image]**
 - `python inference.py --webcam True --background True` **[With background image]**
+
+### Webinterface
+
+- `python api.py`
+- Click on this [link/localhost](http://127.0.0.1:8000)
+- Upload the image and wait
 
 ## Reference
 
