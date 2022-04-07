@@ -24,6 +24,8 @@ STATIC_IMAGE_PATH = os.path.join(root, 'web_solution', 'static', 'images')
 UPLOAD_FOLDER = os.path.join(STATIC_IMAGE_PATH, 'test_images')
 RESULT_IMAGE = os.path.join(STATIC_IMAGE_PATH, 'result_images')
 
+make_directory = [os.makedirs(path,exist_ok=True) for path in [UPLOAD_FOLDER, RESULT_IMAGE]]
+
 app = Flask(__name__, template_folder=TEMPLATE_FOLDER,
             static_folder=STATIC_FOLDER)
 cors = CORS(app)
