@@ -79,5 +79,15 @@ def upload_file():
 
     return render_template(HOMEPAGE)
 
+
+@app.route('/process/<input_filename>')
+def process(input_filename):
+    image = os.path.join(UPLOAD_FOLDER, input_filename)
+    output_filename = bg_remover.image(
+        image, background=False, output=RESULT_IMAGE, save=True)
+
+    return render_template(HOMEPAGE, input_filename=input_filename, output_filename=output_filename)
+
+
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8000)
