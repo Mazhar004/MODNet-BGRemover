@@ -46,6 +46,7 @@ class BGRemove():
 
     def file_load(self, filename):
         im = cv2.imread(filename)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         if len(im.shape) == 2:
             im = im[:, :, None]
         if im.shape[2] == 1:
@@ -221,6 +222,7 @@ class BGRemove():
 
         if background:
             try:
+                matte = cv2.cvtColor(matte, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(path, matte)
                 return "Successfully saved {}".format(path), name
             except:
@@ -230,7 +232,9 @@ class BGRemove():
             png_image = np.zeros((w, h, 4))
             png_image[:, :, :3] = matte
             png_image[:, :, 3] = self.alpha
+            png_image = png_image.astype(np.uint8)
             try:
+                png_image = cv2.cvtColor(png_image, cv2.COLOR_RGBA2BGRA)
                 cv2.imwrite(path, png_image, [
                             int(cv2.IMWRITE_PNG_COMPRESSION), 9])
                 return "Successfully saved {}".format(path), name
