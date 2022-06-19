@@ -53,7 +53,7 @@ class BGRemove():
             im = np.repeat(im, 3, axis=2)
         elif im.shape[2] == 4:
             im = im[:, :, 0:3]
-        
+
         return im
 
     def dir_check(self, path):
@@ -119,7 +119,7 @@ class BGRemove():
         im = self.pre_process(im)
         _, _, matte = BGRemove.modnet(im, inference=False)
         matte = self.post_process(matte, background)
-        
+
         if save:
             matte = np.uint8(matte)
             msg, name = self.save(matte, output, background)
