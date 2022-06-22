@@ -1,5 +1,5 @@
-numpy==1.19.5
-opencv-python==4.5.1.48
-torch==1.7.1
-torchvision==0.2.2.post3
-Pillow==6.2.2
+numpy~=1.19.5
+opencv-python~=4.5.1.48
+torch~=1.7.1
+torchvision~=0.2.2.post3
+Pillow~=6.2.2
