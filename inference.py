@@ -35,4 +35,4 @@ if __name__ == "__main__":
             bg_remover.folder(args.folder, background=args.background)
 
     except Exception as Err:
-        print("Erro happend {}".format(Err))
+        print("Error happened {}".format(Err))
