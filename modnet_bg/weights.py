@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -64,7 +65,14 @@ def _verify(path: Path, spec: WeightSpec) -> None:
 
 def _http_get(url: str, dest: Path) -> None:
     """Stream a URL to dest. Separated out so tests can replace it."""
-    request = urllib.request.Request(url, headers={"User-Agent": "modnet-bgremover"})
+    # The URL comes from MODNET_WEIGHTS_URL_*, which an operator sets. Restrict
+    # it to http(s): urllib would otherwise happily honour file:// and copy an
+    # arbitrary local path into the weights cache.
+    scheme = urllib.parse.urlparse(url).scheme.lower()
+    if scheme not in ("http", "https"):
+        raise WeightsError(f"Refusing to fetch weights over {scheme or 'an unknown'} scheme.")
+
+    request = urllib.request.Request(url, headers={"User-Agent": "modnet-bgremover"})  # noqa: S310
     with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310
         declared = response.headers.get("Content-Length")
         if declared and int(declared) > _MAX_DOWNLOAD_BYTES:

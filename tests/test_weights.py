@@ -94,3 +94,10 @@ def test_bad_download_is_not_left_on_disk(tmp_path, monkeypatch):
 
     assert not (cache / w.WEIGHTS["webcam"].filename).exists()
     assert not list(cache.glob("*.part"))
+
+
+@pytest.mark.parametrize("url", ["file:///etc/passwd", "ftp://host/x.ckpt", "/local/path.ckpt"])
+def test_non_http_download_urls_are_refused(tmp_path, url):
+    """A weights URL is operator-supplied; urllib would honour file:// happily."""
+    with pytest.raises(WeightsError, match="Refusing to fetch"):
+        w._http_get(url, tmp_path / "out.part")
