@@ -4527,8 +4527,9 @@ def test_dockerfile_exists(dockerfile):
 
 
 def test_runs_as_a_non_root_user(dockerfile):
-    assert "USER " in dockerfile
-    assert "USER root" not in dockerfile.split("USER ", 1)[1][:20]
+    # The *last* USER directive is what the container runs as.
+    last_user = [line for line in dockerfile.splitlines() if line.startswith("USER ")][-1]
+    assert last_user.strip() == "USER appuser"
 
 
 def test_uses_the_cpu_torch_index(dockerfile):
@@ -4940,13 +4941,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pip-audit==2.10.1
-      - run: pip-audit --strict --desc -r <(python -c "
-          import tomllib, pathlib
-          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
-          print('\n'.join(data['project']['dependencies']))
-          ")
-        shell: bash
+      - run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0 torchvision==0.29.0
+      - run: pip install -e . pip-audit==2.10.1
+      # Audits the resolved environment, so transitive dependencies are covered
+      # too -- not just the pins written in pyproject.toml.
+      - run: pip-audit --strict --desc
 
   images:
     runs-on: ubuntu-latest
@@ -5105,7 +5104,7 @@ git rm -r output
 
 - [ ] **Step 4: Rewrite `README.md`**
 
-```markdown
+````markdown
 # MODNet Background Remover
 
 Remove the background from photos and videos in your browser. Everything runs
@@ -5198,7 +5197,7 @@ a GPU.
 
 MODNet is by Zhanghan Ke et al. The network in `modnet_bg/models/` is upstream
 code, vendored unchanged.
-```
+````
 
 Adjust the screenshot references to match the Step 3 decision.
 
