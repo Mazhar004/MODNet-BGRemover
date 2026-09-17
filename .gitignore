@@ -139,3 +139,4 @@ weights/
 .claude-flow/
 agentdb.rvf/
 ruvector.db
+.swarm/
