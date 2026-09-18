@@ -18,7 +18,9 @@ Every task's requirements implicitly include this section.
 - **Pinned dependency versions** (verified against PyPI on 2026-09-17; pin with `==`):
   - `torch==2.14.0`, `torchvision==0.29.0`
   - `numpy==2.5.3`, `pillow==12.3.0`
-  - `imageio==2.37.4`, `imageio-ffmpeg==0.6.0`
+  - `imageio-ffmpeg==0.6.0` (plain `imageio` was dropped during Task 8: its v3
+    FFMPEG plugin refuses `.gif` on the extension alone, so `video.py` calls
+    `imageio_ffmpeg.read_frames` directly and nothing else needed it)
   - `flask==3.1.3`, `werkzeug==3.1.8`, `flask-sock==0.7.0`, `gunicorn==26.2.0`
   - Dev: `pytest==9.1.1`, `pytest-cov==7.1.0`, `ruff==0.16.8`, `pip-audit==2.10.1`
 - **No OpenCV.** The rebuild drops `opencv-python` entirely. Rationale: OpenCV has moved to 5.0.0.93 with breaking API changes (`cv2.VideoWriter_fourcc` relocated), it is a ~60MB wheel, and it is a recurring CVE source. Pillow covers resize/blur/encode and imageio-ffmpeg covers video I/O. The vendored `models/` code imports only `torch`, so nothing in the network depends on cv2. **This is a deliberate deviation from spec section 5.6, which named `cv2.VideoCapture`.**

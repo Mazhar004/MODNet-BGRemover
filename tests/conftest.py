@@ -56,3 +56,38 @@ def sample_rgb():
     image = np.zeros((128, 96, 3), dtype=np.uint8)
     image[:, :] = (255, 0, 0)
     return image
+
+
+@pytest.fixture
+def tiny_video(tmp_path):
+    """A real 10-frame 64x48 MP4, written with the same encoder the app uses."""
+    import imageio_ffmpeg
+
+    dest = tmp_path / "tiny.mp4"
+    writer = imageio_ffmpeg.write_frames(
+        str(dest),
+        size=(64, 48),
+        fps=10.0,
+        pix_fmt_in="rgb24",
+        codec="libx264",
+        output_params=["-pix_fmt", "yuv420p"],
+    )
+    writer.send(None)
+    for i in range(10):
+        frame = np.full((48, 64, 3), i * 20, dtype=np.uint8)
+        writer.send(frame.tobytes())
+    writer.close()
+    return dest
+
+
+@pytest.fixture
+def animated_webp(tmp_path):
+    """Animated WebP: ffmpeg's bundled build cannot demux it, Pillow can."""
+    from PIL import Image
+
+    dest = tmp_path / "anim.webp"
+    frames = [Image.new("RGB", (32, 24), (i * 60 % 256, 0, 0)) for i in range(5)]
+    frames[0].save(
+        dest, format="WEBP", save_all=True, append_images=frames[1:], duration=100, loop=0
+    )
+    return dest
