@@ -129,3 +129,14 @@ dmypy.json
 .pyre/
 
 pretrained/*.ckpt
+
+# Model checkpoints (downloaded at runtime, verified by SHA-256)
+weights/
+*.ckpt
+
+# OS / tooling artifacts
+.DS_Store
+.claude-flow/
+agentdb.rvf/
+ruvector.db
+.swarm/

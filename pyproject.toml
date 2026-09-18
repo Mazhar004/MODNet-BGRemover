@@ -1,0 +1,60 @@
+[build-system]
+# >=83 clears PYSEC-2025-49 (PackageIndex path traversal, fixed 78.1.1) and
+# PYSEC-2026-3447 (MANIFEST.in NFD/NFC exclusion bypass, fixed 83.0.0).
+requires = ["setuptools>=83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modnet-bgremover"
+version = "2.0.0"
+description = "Web application for removing image and video backgrounds with MODNet"
+requires-python = ">=3.12"
+dependencies = [
+    "torch==2.14.0",
+    "torchvision==0.29.0",
+    "numpy==2.5.3",
+    "pillow==12.3.0",
+    "imageio-ffmpeg==0.6.0",
+    "flask==3.1.3",
+    "werkzeug==3.1.8",
+    "flask-sock==0.7.0",
+    "gunicorn==26.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.8",
+    "pip-audit==2.10.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["modnet_bg*"]
+
+[tool.setuptools.package-data]
+"modnet_bg.web" = ["templates/*.html", "static/css/*.css", "static/js/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = ["needs_weights: requires a real MODNet checkpoint on disk"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101"]
+
+[tool.ruff.format]
+# per-file-ignores governs the linter only. Without this the formatter
+# restyles the vendored network too, which makes upstream diffs unreadable.
+exclude = ["modnet_bg/models/**"]
+
+[tool.ruff.lint.per-file-ignores]
+# Vendored upstream network: not ours to restyle.
+"modnet_bg/models/**" = ["ALL"]
+# Tests assert on literal secrets and poke private attributes on purpose.
+"tests/**" = ["S105", "S106", "SLF001"]
