@@ -36,11 +36,18 @@ These are decisions, not preferences. Changing one needs a reason.
   linter and the formatter so upstream diffs stay readable. Do not restyle it.
 - **Media type comes from magic bytes, and image-vs-video from frame count.**
   A one-frame GIF is a picture; a sixty-frame GIF is a video.
+- **Never run gunicorn natively on macOS.** It forks; a forked process cannot
+  reach `MTLCompilerService` after it idles, so MPS aborts the worker and Obj-C
+  fork safety blocks every respawn. Use `python -m modnet_bg` (threaded, no
+  fork). Docker/Linux has no Metal and keeps gunicorn.
+- **MPS inference is serialised** behind a module-level lock; concurrent forward
+  passes abort the process.
 
 ## Commands
 
 ```bash
 pip install -e ".[dev]"
+python -m modnet_bg                  # native run (no fork; required for MPS)
 pytest
 ruff check modnet_bg tests && ruff format --check modnet_bg tests
 docker compose up --build        # http://localhost:8000

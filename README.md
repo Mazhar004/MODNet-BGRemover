@@ -47,8 +47,17 @@ contains the checkpoints — `weights/` is mounted read-only at runtime.
 
 ```bash
 pip install -e ".[dev]"
-python -m flask --app "modnet_bg.web:create_app()" run --port 8000
+python -m modnet_bg
 ```
+
+**Do not use gunicorn natively on macOS.** Gunicorn forks its workers, and
+Apple's Metal stack cannot re-establish its connection to `MTLCompilerService`
+inside a forked process once that service has idled out. The worker aborts
+mid-request, and macOS Obj-C fork safety then prevents every replacement worker
+from booting, so the server spins instead of recovering. Measured here: with a
+240-second idle before the first GPU request, gunicorn died every time and the
+non-forking server above completed every time. Linux has no Metal, so the
+Docker image keeps using gunicorn.
 
 ## Configuration
 
