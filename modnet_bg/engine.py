@@ -30,6 +30,17 @@ _STD = 0.5
 _engine_cache: dict[tuple[str, str], MattingEngine] = {}
 _cache_lock = threading.Lock()
 
+# PyTorch's MPS backend is not safe to drive from several threads at once:
+# concurrent forward passes abort the process with a Metal assertion
+# ("Unable to reach MTLCompilerService") or a plain SIGABRT, which on macOS
+# takes the whole gunicorn worker with it. CPU has been verified safe under
+# the same load, so only MPS pays this cost.
+#
+# The lock is module-level, not per-engine, because the upload path and the
+# webcam path load different checkpoints onto the same GPU -- two engines
+# with private locks would still collide on the device.
+_mps_lock = threading.Lock()
+
 
 def target_size(h: int, w: int) -> tuple[int, int]:
     """Inference dimensions: short side near REF_SIZE, both stride-aligned.
@@ -93,7 +104,14 @@ class MattingEngine:
         tensor = tensor.unsqueeze(0)
         tensor = F.interpolate(tensor, size=(th, tw), mode="area")
 
-        alpha = self._forward(tensor)
+        if self._device == "mps":
+            # Serialise: see _mps_lock. The alpha is detached from the device
+            # inside _forward's caller below, so the lock covers only the GPU
+            # work, not the CPU-side resize.
+            with _mps_lock:
+                alpha = self._forward(tensor)
+        else:
+            alpha = self._forward(tensor)
 
         # Upscale on the CPU, always. mode="area" lowers to adaptive_avg_pool2d,
         # which on MPS requires the input size to be divisible by the output

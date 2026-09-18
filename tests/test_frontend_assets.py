@@ -115,3 +115,70 @@ def test_webcam_stops_all_tracks_on_stop():
     """Leaving the camera light on after Stop is a privacy bug."""
     source = WEBCAM_JS.read_text()
     assert "getTracks" in source and "stop()" in source
+
+
+def test_thumbnail_preview_is_built_from_the_local_file():
+    """The preview must appear as soon as a file is chosen, without a round
+    trip -- so it comes from an object URL, not from the server."""
+    source = APP_JS.read_text()
+    assert "thumbnailFor" in source
+    assert "createObjectURL" in source
+    assert ".thumb" in APP_CSS.read_text()
+
+
+def test_object_urls_are_revoked():
+    """Otherwise every added-and-removed file leaks its decoded bitmap."""
+    assert "revokeObjectURL" in APP_JS.read_text()
+
+
+def test_progress_shows_a_numeric_readout_and_a_stage():
+    """Regression: a bar alone sat at 0% and read as stuck."""
+    source = APP_JS.read_text()
+    assert "bar__pct" in source, "no percentage readout"
+    assert "job.stage" in source, "server stage label is not surfaced"
+    assert 'setAttribute("role", "progressbar")' in source
+
+
+def test_no_hardcoded_white_in_the_comparison_slider():
+    """Regression: the divider was #fff, which is the brightest thing on a dark
+    page and reads as an unwanted white border."""
+    import re
+
+    css = APP_CSS.read_text()
+    compare_block = css[css.index(".compare {") : css.index(".webcam-canvas {")]
+    # Strip comments: the explanation above the rule names #fff on purpose.
+    declarations = re.sub(r"/\*.*?\*/", "", compare_block, flags=re.S).lower()
+    for literal in ("#fff", "#ffffff", "white"):
+        assert literal not in declarations, f"{literal} still hardcoded in the slider"
+
+
+def test_checkerboard_is_theme_aware():
+    """A light checker against a near-black UI reads as a white block rather
+    than as transparency."""
+    css = APP_CSS.read_text()
+    checker = css[css.index(".checker {") : css.index(".checker {") + 600]
+    assert "var(--checker-a)" in checker and "var(--checker-b)" in checker
+    assert "#8d8d8d" not in checker and "#b6b6b6" not in checker
+    # Both themes must define the tokens.
+    assert css.count("--checker-a") >= 3
+
+
+def test_borders_are_translucent_not_solid_hairlines():
+    css = APP_CSS.read_text()
+    assert "--border: rgba(" in css, "borders should tint with what is behind them"
+
+
+def test_slider_handle_meets_touch_target_size():
+    css = APP_CSS.read_text()
+    handle = css[css.index(".compare__handle {") :][:400]
+    assert "width: 44px" in handle, "drag handle must be at least 44px wide"
+
+
+def test_reduced_motion_is_respected():
+    assert "prefers-reduced-motion" in APP_CSS.read_text()
+
+
+def test_comparison_sides_are_labelled():
+    source = COMPARE_JS.read_text()
+    assert "compare__tag" in source
+    assert "Original" in source and "Removed" in source

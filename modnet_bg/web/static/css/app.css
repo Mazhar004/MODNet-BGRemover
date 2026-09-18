@@ -2,23 +2,38 @@
   --bg: #0f1115;
   --surface: #171a21;
   --surface-raised: #1f242d;
-  --border: #2b313c;
+  /* Translucent rather than a solid colour: a fixed light hex reads as a hard
+     white hairline against dark surfaces. This tints with whatever is behind. */
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
   --text: #e8eaed;
   --text-dim: #9aa3b2;
-  --accent: #5b8cff;
+  --accent: #7c5cff;
+  --accent-soft: rgba(124, 92, 255, 0.16);
   --danger: #ff6b6b;
   --ok: #4ade80;
-  --radius: 10px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  /* Checkerboard kept dark in dark mode. A light checker is the brightest
+     thing on the page and reads as a white block, not as transparency. */
+  --checker-a: #23262e;
+  --checker-b: #191c22;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f6f7f9;
     --surface: #ffffff;
-    --surface-raised: #f0f2f5;
-    --border: #d7dbe2;
+    --surface-raised: #f4f5f8;
+    --border: rgba(16, 20, 28, 0.12);
+    --border-strong: rgba(16, 20, 28, 0.2);
     --text: #1a1d23;
     --text-dim: #5c6472;
+    --accent-soft: rgba(124, 92, 255, 0.12);
+    --checker-a: #e4e6ea;
+    --checker-b: #f4f5f7;
+    --shadow: 0 1px 2px rgba(16, 20, 28, 0.06), 0 8px 24px rgba(16, 20, 28, 0.08);
   }
 }
 
@@ -47,8 +62,9 @@ body {
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
 }
 .panel--wide { grid-column: 1 / -1; }
 .panel h2 {
@@ -62,7 +78,7 @@ body {
 .drop-zone {
   border: 2px dashed var(--border);
   border-radius: var(--radius);
-  padding: 28px 16px;
+  padding: 40px 16px;
   text-align: center;
   cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease;
@@ -113,51 +129,118 @@ input[type="color"] { padding: 4px; height: 40px; }
 .status[data-tone="ok"] { color: var(--ok); }
 
 .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+
+/* thumbnail | name + progress | actions */
 .queue-item {
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px;
   display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr auto;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
 }
-/* Grid items stretch by default, which made the Download button span its
-   whole cell. Keep action controls at their natural width. */
-.queue-item > .button,
-.queue-item > a.button,
-.queue-item > progress + .button { justify-self: end; }
-.queue-item__name { font-weight: 600; word-break: break-all; }
-.queue-item__meta { color: var(--text-dim); font-size: 0.8rem; }
-.queue-item__preview { grid-column: 1 / -1; }
 .queue-item[data-status="error"] { border-color: var(--danger); }
 
-progress { width: 100%; height: 6px; grid-column: 1 / -1; }
+/* Preview of the chosen file, shown immediately -- before any upload. */
+.thumb {
+  width: 88px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  filter: blur(6px);
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+.thumb img.is-ready { opacity: 1; filter: none; }
+.thumb--video {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.queue-item__main { min-width: 0; display: grid; gap: 6px; }
+.queue-item__head { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.queue-item__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.queue-item__size { color: var(--text-dim); font-size: 0.8rem; flex: none; }
+.queue-item__meta { color: var(--text-dim); font-size: 0.8rem; }
+.queue-item__actions { display: flex; gap: 8px; align-items: center; }
+.queue-item__preview { grid-column: 1 / -1; margin-top: 4px; }
+
+/* Thin track plus a numeric readout: a bar alone cannot distinguish
+   "slow" from "stuck", and a number that moves can. */
+.bar-row { display: flex; align-items: center; gap: 8px; }
+.bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.bar__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+.bar__pct {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .queue-item { grid-template-columns: auto minmax(0, 1fr); }
+  .queue-item__actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
 
 /* Checkerboard so transparency is actually visible. */
 .checker {
   background-image:
-    linear-gradient(45deg, #8d8d8d 25%, transparent 25%),
-    linear-gradient(-45deg, #8d8d8d 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #8d8d8d 75%),
-    linear-gradient(-45deg, transparent 75%, #8d8d8d 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-  background-color: #b6b6b6;
+    linear-gradient(45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-a) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-color: var(--checker-b);
 }
 
 .compare {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius);
+  border: 1px solid var(--border);
   touch-action: none;
   user-select: none;
+  cursor: ew-resize;
   /* compare.js replaces this with the media's own ratio once it loads. */
   aspect-ratio: 16 / 9;
-  max-height: 60vh;
+  max-height: 72vh;
   margin: 0 auto;
 }
+.compare:focus-within { border-color: var(--accent); }
 .compare__layer { position: absolute; inset: 0; }
 .compare__layer img, .compare__layer video {
   width: 100%;
@@ -166,27 +249,70 @@ progress { width: 100%; height: 6px; grid-column: 1 / -1; }
   display: block;
 }
 .compare__layer--after { position: relative; }
+
+/* Corner labels so the split is self-explanatory without a caption. */
+.compare__tag {
+  position: absolute;
+  top: 10px;
+  z-index: 20;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.compare__tag--before { left: 10px; }
+.compare__tag--after { right: 10px; }
+
+/* The divider takes the surface colour, not #fff. A hard white line is the
+   brightest element on a dark page and reads as an unwanted border. */
 .compare__handle {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3px;
-  margin-left: -1.5px;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
-  cursor: ew-resize;
+  width: 44px;               /* touch target, wider than the visible line */
+  margin-left: -22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  background: none;
+  border: 0;
+}
+.compare__handle:active { cursor: grabbing; }
+.compare__handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border-strong);
 }
 .compare__handle::after {
   content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 34px;
-  height: 34px;
-  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  transition: transform 150ms ease;
+}
+.compare__handle:hover::after { transform: scale(1.06); }
+.compare__handle:focus-visible::after { border-color: var(--accent); }
+.compare__grip {
+  position: absolute;
+  z-index: 1;
+  color: var(--text-dim);
+  pointer-events: none;
+  display: flex;
 }
 
 .webcam-canvas {
@@ -199,6 +325,14 @@ progress { width: 100%; height: 6px; grid-column: 1 / -1; }
 }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Honour the system setting: the slider and thumbnails both animate. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 @media (max-width: 720px) {
   .layout { grid-template-columns: 1fr; }
