@@ -165,17 +165,22 @@ def write_video(
     alpha: bool,
 ) -> None:
     """Encode frames. size is (width, height)."""
+    # pix_fmt_out is a first-class parameter; passing -pix_fmt in output_params
+    # as well makes ffmpeg warn about duplicate options.
     if alpha:
         kwargs = dict(
             pix_fmt_in="rgba",
+            pix_fmt_out="yuva420p",
             codec="libvpx-vp9",
-            output_params=["-pix_fmt", "yuva420p", "-auto-alt-ref", "0", "-b:v", "2M"],
+            # VP9 alt-ref frames break alpha, so they have to be off.
+            output_params=["-auto-alt-ref", "0", "-b:v", "2M"],
         )
     else:
         kwargs = dict(
             pix_fmt_in="rgb24",
+            pix_fmt_out="yuv420p",
             codec="libx264",
-            output_params=["-pix_fmt", "yuv420p", "-preset", "medium", "-crf", "20"],
+            output_params=["-preset", "medium", "-crf", "20"],
         )
 
     writer = imageio_ffmpeg.write_frames(str(dest), size=size, fps=float(fps), **kwargs)
