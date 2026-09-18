@@ -59,13 +59,34 @@
     beforeLayer.className = "compare__layer compare__layer--before";
     beforeLayer.append(mediaElement(before, kind));
 
-    const handle = document.createElement("div");
+    // Corner tags: the split is meaningless without naming the two sides.
+    const beforeTag = document.createElement("span");
+    beforeTag.className = "compare__tag compare__tag--before";
+    beforeTag.textContent = "Original";
+    const afterTag = document.createElement("span");
+    afterTag.className = "compare__tag compare__tag--after";
+    afterTag.textContent = "Removed";
+
+    const handle = document.createElement("button");
+    handle.type = "button";
     handle.className = "compare__handle";
     handle.setAttribute("role", "slider");
-    handle.setAttribute("tabindex", "0");
     handle.setAttribute("aria-label", "Reveal the original image");
     handle.setAttribute("aria-valuemin", "0");
     handle.setAttribute("aria-valuemax", "100");
+
+    // Chevrons inside the puck, so it reads as draggable rather than decorative.
+    const grip = document.createElement("span");
+    grip.className = "compare__grip";
+    grip.setAttribute("aria-hidden", "true");
+    grip.innerHTML =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" ' +
+      'stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" ' +
+      'stroke-linejoin="round" style="margin-left:-8px"><path d="m9 18 6-6-6-6"/></svg>';
+    handle.append(grip);
 
     let position = 50;
 
@@ -115,7 +136,7 @@
       }
     });
 
-    wrapper.append(afterLayer, beforeLayer, handle);
+    wrapper.append(afterLayer, beforeLayer, beforeTag, afterTag, handle);
     apply(50);
   }
 
