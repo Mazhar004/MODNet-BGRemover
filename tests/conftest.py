@@ -91,3 +91,33 @@ def animated_webp(tmp_path):
         dest, format="WEBP", save_all=True, append_images=frames[1:], duration=100, loop=0
     )
     return dest
+
+
+@pytest.fixture
+def engine_factory():
+    """An engine_factory that never touches a checkpoint.
+
+    Exposed as a fixture rather than imported directly: `tests/` is not a
+    package (no __init__.py, pytest prepend import mode), so
+    `from tests.conftest import ...` would fail.
+    """
+    from modnet_bg.engine import MattingEngine
+
+    return lambda path, device: MattingEngine(FakeMatteModel(), device)
+
+
+@pytest.fixture
+def fake_pipeline(tmp_path, engine_factory, monkeypatch):
+    """A Pipeline whose engine never touches a checkpoint."""
+    from modnet_bg import pipeline as pipeline_module
+    from modnet_bg.config import load_settings
+    from modnet_bg.pipeline import Pipeline
+
+    # resolve_weights would demand a real checkpoint; the fake engine ignores it.
+    monkeypatch.setattr(
+        pipeline_module.weights, "resolve_weights", lambda key, **kw: tmp_path / f"{key}.ckpt"
+    )
+    settings = load_settings(
+        {"MODNET_DATA_DIR": str(tmp_path / "data"), "MODNET_DEVICE": "cpu"}
+    )
+    return Pipeline(settings, engine_factory=engine_factory)

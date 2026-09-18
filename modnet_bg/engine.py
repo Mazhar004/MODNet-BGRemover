@@ -83,7 +83,12 @@ class MattingEngine:
         h, w = rgb.shape[:2]
         th, tw = target_size(h, w)
 
-        tensor = torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1).float()
+        # Convert to float32 in numpy first. Arrays that came from Pillow are
+        # read-only, and torch.from_numpy warns about undefined behaviour on
+        # those; the dtype change produces a fresh writable buffer. We needed
+        # the float conversion anyway, so this costs nothing extra.
+        array = np.ascontiguousarray(rgb, dtype=np.float32)
+        tensor = torch.from_numpy(array).permute(2, 0, 1)
         tensor = (tensor / 255.0 - _MEAN) / _STD
         tensor = tensor.unsqueeze(0)
         tensor = F.interpolate(tensor, size=(th, tw), mode="area")
