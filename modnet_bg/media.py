@@ -18,7 +18,12 @@ from .errors import CorruptMediaError, MediaTooLargeError, UnsupportedMediaError
 MediaKind = Literal["image", "video"]
 
 IMAGE_FORMATS = frozenset({"png", "jpeg", "webp", "bmp", "tiff", "gif"})
-VIDEO_FORMATS = frozenset({"mp4", "webm", "avi", "mov"})
+VIDEO_FORMATS = frozenset({"mp4", "webm", "avi", "mov", "gif"})
+
+# Formats that may carry more than one frame. Whether a given upload is an
+# image or a video is decided by counting frames, not by the container: a
+# one-frame GIF is a picture, a sixty-one-frame GIF is a short film.
+ANIMATABLE_FORMATS = frozenset({"gif", "webp", "png"})
 
 # Pillow's own bomb guard is a DecompressionBombWarning by default. We do our
 # own explicit check and raise this ceiling out of the way of it.
@@ -38,8 +43,6 @@ def _match_prefix(data: bytes) -> MediaInfo | None:
         (b"BM", MediaInfo("image", "bmp")),
         (b"II*\x00", MediaInfo("image", "tiff")),
         (b"MM\x00*", MediaInfo("image", "tiff")),
-        # An animated GIF is handled as an image: load_image() converts, which
-        # takes the first frame. Callers wanting motion should upload a video.
         (b"GIF87a", MediaInfo("image", "gif")),
         (b"GIF89a", MediaInfo("image", "gif")),
         (b"\x1a\x45\xdf\xa3", MediaInfo("video", "webm")),
@@ -50,20 +53,37 @@ def _match_prefix(data: bytes) -> MediaInfo | None:
     return None
 
 
+def frame_count(data: bytes) -> int:
+    """How many frames an animatable container holds. 1 when unknown."""
+    try:
+        with Image.open(io.BytesIO(data)) as probe:
+            return int(getattr(probe, "n_frames", 1))
+    except Exception:
+        # Not decodable here; load_image() will raise a useful error later.
+        return 1
+
+
+def _resolve_kind(info: MediaInfo, data: bytes) -> MediaInfo:
+    """Promote a multi-frame image container to video."""
+    if info.format in ANIMATABLE_FORMATS and info.kind == "image" and frame_count(data) > 1:
+        return MediaInfo(kind="video", format=info.format)
+    return info
+
+
 def sniff(data: bytes) -> MediaInfo:
-    """Identify an upload from its leading bytes."""
+    """Identify an upload from its leading bytes, and its frame count."""
     if len(data) < 12:
         raise UnsupportedMediaError("Upload is empty or too short to identify.")
 
     direct = _match_prefix(data)
     if direct is not None:
-        return direct
+        return _resolve_kind(direct, data)
 
     # RIFF containers carry their real type at offset 8.
     if data.startswith(b"RIFF"):
         tag = data[8:12]
         if tag == b"WEBP":
-            return MediaInfo("image", "webp")
+            return _resolve_kind(MediaInfo("image", "webp"), data)
         if tag == b"AVI ":
             return MediaInfo("video", "avi")
 

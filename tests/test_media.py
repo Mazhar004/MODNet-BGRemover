@@ -77,18 +77,40 @@ def test_encode_roundtrip_preserves_alpha():
     assert decoded.getpixel((0, 0))[3] == 128
 
 
-def test_gif_is_accepted_as_an_image():
+def _animated(fmt: str, frames: int = 4, size=(16, 12)) -> bytes:
+    buffer = io.BytesIO()
+    images = [Image.new("RGB", size, (i * 50 % 256, 0, 0)) for i in range(frames)]
+    images[0].save(
+        buffer, format=fmt, save_all=True, append_images=images[1:], duration=100, loop=0
+    )
+    return buffer.getvalue()
+
+
+def test_single_frame_gif_is_an_image():
     assert media.sniff(_encode("GIF", mode="P")) == media.MediaInfo(kind="image", format="gif")
 
 
-def test_animated_gif_decodes_to_its_first_frame():
-    """Motion is dropped deliberately; uploading a video is the way to keep it."""
-    buffer = io.BytesIO()
-    frames = [Image.new("P", (8, 8), 0), Image.new("P", (8, 8), 1)]
-    frames[0].save(buffer, format="GIF", save_all=True, append_images=frames[1:])
+@pytest.mark.parametrize("fmt,expected", [("GIF", "gif"), ("WEBP", "webp"), ("PNG", "png")])
+def test_multi_frame_containers_are_routed_to_video(fmt, expected):
+    """A 61-frame GIF is a short film, not a picture. Route it by frame count,
+    not by container -- otherwise 60 frames are silently discarded."""
+    info = media.sniff(_animated(fmt))
+    assert info == media.MediaInfo(kind="video", format=expected)
 
-    array = media.load_image(buffer.getvalue(), max_pixels=10_000)
-    assert array.shape == (8, 8, 3)
+
+def test_frame_count_reads_real_project_media():
+    from pathlib import Path
+
+    gif = Path(__file__).resolve().parent.parent / "output" / "sample.gif"
+    if not gif.exists():
+        pytest.skip("demo asset not present")
+    data = gif.read_bytes()
+    assert media.frame_count(data) == 61
+    assert media.sniff(data).kind == "video"
+
+
+def test_frame_count_is_one_for_undecodable_data():
+    assert media.frame_count(b"not an image") == 1
 
 
 def test_real_project_media_is_typed_by_content_not_extension():
