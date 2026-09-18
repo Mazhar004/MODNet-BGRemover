@@ -84,19 +84,36 @@ class Pipeline:
         self, data: bytes, options: ProcessOptions, stem: str
     ) -> Callable[[Job], tuple[Path, str]]:
         def run(job: Job) -> tuple[Path, str]:
-            job.set_total(1)
+            # Five real steps rather than one. A single step meant the bar read
+            # 0% for the whole job and then jumped to done, which looks hung on
+            # a large photo where each step takes seconds.
+            job.set_total(5)
             job.raise_if_cancelled()
 
+            job.set_stage("Loading model")
             engine = self.resolve_engine(options.device)
             job.device_used = engine.device
+            job.advance()
 
+            job.set_stage("Reading image")
             rgb = media.load_image(data, max_pixels=self._settings.max_image_pixels)
-            alpha = engine.matte(rgb)
-            out = self._composite(rgb, alpha, options)
+            job.advance()
+            job.raise_if_cancelled()
 
+            job.set_stage(f"Removing background on {engine.device}")
+            alpha = engine.matte(rgb)
+            job.advance()
+
+            job.set_stage("Applying background")
+            out = self._composite(rgb, alpha, options)
+            job.advance()
+
+            job.set_stage("Encoding PNG")
             path = self._output(".png")
             path.write_bytes(media.encode_image(out, "png"))
             job.advance()
+
+            job.set_stage("Done")
             return path, f"{stem}.png"
 
         return run
@@ -113,6 +130,7 @@ class Pipeline:
                 )
 
             job.set_total(info.frame_count or None)
+            job.set_stage("Loading model")
             job.raise_if_cancelled()
 
             engine = self.resolve_engine(options.device)
@@ -120,6 +138,8 @@ class Pipeline:
 
             suffix, wants_alpha = video.container_for(options.mode)
             path = self._output(suffix)
+
+            job.set_stage(f"Processing {info.frame_count} frames on {engine.device}")
 
             def processed():
                 for frame in video.iter_frames(source):
@@ -140,11 +160,13 @@ class Pipeline:
             )
 
             if not wants_alpha:
+                job.set_stage("Adding audio")
                 muxed = path.with_name(f"{path.stem}-audio{suffix}")
                 if video.mux_audio(path, source, muxed):
                     path.unlink(missing_ok=True)
                     path = muxed
 
+            job.set_stage("Done")
             return path, f"{stem}{suffix}"
 
         return run

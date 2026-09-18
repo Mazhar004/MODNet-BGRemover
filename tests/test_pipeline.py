@@ -144,3 +144,30 @@ def test_image_mode_composites_the_supplied_background(fake_pipeline):
 
     with Image.open(path) as out:
         assert out.getpixel((0, 0)) == (0, 255, 0)
+
+
+def test_image_job_reports_intermediate_progress(fake_pipeline):
+    """Regression: the bar sat at 0% for the whole job and then jumped to done,
+    which reads as 'stuck' on a large photo."""
+    job = _job()
+    seen = []
+    original = job.set_stage
+
+    def record(label):
+        original(label)
+        seen.append((label, job.progress))
+
+    job.set_stage = record
+    fake_pipeline.image_job(_png(), ProcessOptions(), stem="x")(job)
+
+    assert len(seen) >= 3, f"too few progress updates: {seen}"
+    progresses = [p for _, p in seen]
+    assert progresses == sorted(progresses), f"progress went backwards: {seen}"
+    assert any(0.0 < p < 1.0 for p in progresses), f"progress never moved: {seen}"
+    assert all(label for label, _ in seen), "a stage had no label"
+
+
+def test_video_job_reports_a_stage(fake_pipeline, tiny_video):
+    job = _job(kind="video")
+    fake_pipeline.video_job(tiny_video, ProcessOptions(mode="color"), stem="clip")(job)
+    assert job.stage

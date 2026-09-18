@@ -115,3 +115,25 @@ def test_webcam_stops_all_tracks_on_stop():
     """Leaving the camera light on after Stop is a privacy bug."""
     source = WEBCAM_JS.read_text()
     assert "getTracks" in source and "stop()" in source
+
+
+def test_thumbnail_preview_is_built_from_the_local_file():
+    """The preview must appear as soon as a file is chosen, without a round
+    trip -- so it comes from an object URL, not from the server."""
+    source = APP_JS.read_text()
+    assert "thumbnailFor" in source
+    assert "createObjectURL" in source
+    assert ".thumb" in APP_CSS.read_text()
+
+
+def test_object_urls_are_revoked():
+    """Otherwise every added-and-removed file leaks its decoded bitmap."""
+    assert "revokeObjectURL" in APP_JS.read_text()
+
+
+def test_progress_shows_a_numeric_readout_and_a_stage():
+    """Regression: a bar alone sat at 0% and read as stuck."""
+    source = APP_JS.read_text()
+    assert "bar__pct" in source, "no percentage readout"
+    assert "job.stage" in source, "server stage label is not surfaced"
+    assert 'setAttribute("role", "progressbar")' in source

@@ -113,27 +113,91 @@ input[type="color"] { padding: 4px; height: 40px; }
 .status[data-tone="ok"] { color: var(--ok); }
 
 .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+
+/* thumbnail | name + progress | actions */
 .queue-item {
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 12px;
   display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr auto;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
 }
-/* Grid items stretch by default, which made the Download button span its
-   whole cell. Keep action controls at their natural width. */
-.queue-item > .button,
-.queue-item > a.button,
-.queue-item > progress + .button { justify-self: end; }
-.queue-item__name { font-weight: 600; word-break: break-all; }
-.queue-item__meta { color: var(--text-dim); font-size: 0.8rem; }
-.queue-item__preview { grid-column: 1 / -1; }
 .queue-item[data-status="error"] { border-color: var(--danger); }
 
-progress { width: 100%; height: 6px; grid-column: 1 / -1; }
+/* Preview of the chosen file, shown immediately -- before any upload. */
+.thumb {
+  width: 64px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  filter: blur(6px);
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+.thumb img.is-ready { opacity: 1; filter: none; }
+.thumb--video {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.queue-item__main { min-width: 0; display: grid; gap: 6px; }
+.queue-item__head { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.queue-item__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.queue-item__size { color: var(--text-dim); font-size: 0.8rem; flex: none; }
+.queue-item__meta { color: var(--text-dim); font-size: 0.8rem; }
+.queue-item__actions { display: flex; gap: 8px; align-items: center; }
+.queue-item__preview { grid-column: 1 / -1; }
+
+/* Thin track plus a numeric readout: a bar alone cannot distinguish
+   "slow" from "stuck", and a number that moves can. */
+.bar-row { display: flex; align-items: center; gap: 8px; }
+.bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.bar__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+.bar__pct {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .queue-item { grid-template-columns: auto minmax(0, 1fr); }
+  .queue-item__actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
 
 /* Checkerboard so transparency is actually visible. */
 .checker {

@@ -35,6 +35,7 @@ class Job:
     kind: str
     filename: str
     status: JobStatus = "queued"
+    stage: str = ""
     frames_done: int = 0
     frames_total: int | None = None
     device_used: str | None = None
@@ -53,6 +54,15 @@ class Job:
         if not self.frames_total:
             return 0.0
         return min(1.0, self.frames_done / self.frames_total)
+
+    def set_stage(self, label: str) -> None:
+        """What the job is doing right now, for the UI to show verbatim.
+
+        A percentage alone reads as stuck while a single slow step runs; a
+        label tells the user the difference between working and hung.
+        """
+        with self._lock:
+            self.stage = label
 
     def set_total(self, total: int | None) -> None:
         with self._lock:
@@ -76,6 +86,7 @@ class Job:
             "kind": self.kind,
             "filename": self.filename,
             "status": self.status,
+            "stage": self.stage,
             "progress": round(self.progress, 4),
             "frames_done": self.frames_done,
             "frames_total": self.frames_total,

@@ -176,3 +176,19 @@ def test_job_ids_are_unguessable(registry):
     ids = {registry.submit(lambda j: (None, ""), kind="image", filename="x").id for _ in range(20)}
     assert len(ids) == 20
     assert all(len(i) >= 32 for i in ids)
+
+
+def test_stage_is_reported_and_serialised(registry):
+    def staged(job):
+        job.set_total(2)
+        job.set_stage("Reading")
+        job.advance()
+        job.set_stage("Writing")
+        job.advance()
+        return None, ""
+
+    job = registry.submit(staged, kind="image", filename="x.png")
+    _wait(job)
+
+    assert job.stage == "Writing"
+    assert job.to_dict()["stage"] == "Writing"
