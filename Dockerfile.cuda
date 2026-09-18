@@ -1,0 +1,42 @@
+# CUDA image, roughly 6GB. Built only via: docker compose --profile cuda build
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    MODNET_DATA_DIR=/data \
+    MODNET_WEIGHTS_DIR=/weights
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends software-properties-common curl \
+ && add-apt-repository -y ppa:deadsnakes/ppa \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends python3.12 python3.12-venv \
+ && rm -rf /var/lib/apt/lists/*
+
+# A venv keeps us off the distro's externally-managed Python.
+RUN python3.12 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Default index: the CUDA-enabled wheels.
+COPY pyproject.toml ./
+RUN pip install --upgrade pip && pip install torch==2.14.0 torchvision==0.29.0
+
+COPY modnet_bg ./modnet_bg
+RUN pip install .
+
+RUN useradd --create-home --uid 10001 appuser \
+ && mkdir -p /data /weights \
+ && chown -R appuser:appuser /data
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD curl -fsS http://localhost:8000/health || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "8", \
+     "--timeout", "0", "modnet_bg.web:create_app()"]

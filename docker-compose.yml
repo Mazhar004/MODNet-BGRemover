@@ -1,0 +1,44 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: modnet-bgremover:cpu
+    ports:
+      - "8000:8000"
+    environment:
+      MODNET_DEVICE: auto
+      MODNET_WEIGHTS_DIR: /weights
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+    volumes:
+      # Checkpoints are not baked into the image. Put them here.
+      - ./weights:/weights:ro
+      - results:/data
+    restart: unless-stopped
+
+  web-cuda:
+    profiles: ["cuda"]
+    build:
+      context: .
+      dockerfile: Dockerfile.cuda
+    image: modnet-bgremover:cuda
+    ports:
+      - "8000:8000"
+    environment:
+      MODNET_DEVICE: auto
+      MODNET_WEIGHTS_DIR: /weights
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+    volumes:
+      - ./weights:/weights:ro
+      - results:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  results:

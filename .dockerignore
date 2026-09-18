@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+weights
+output
+assets
+docs
+tests
+**/__pycache__
+*.ckpt
+.DS_Store
+.claude-flow
+.swarm
+ruvector.db
