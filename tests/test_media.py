@@ -98,27 +98,18 @@ def test_multi_frame_containers_are_routed_to_video(fmt, expected):
     assert info == media.MediaInfo(kind="video", format=expected)
 
 
-def test_frame_count_reads_real_project_media():
-    from pathlib import Path
-
-    gif = Path(__file__).resolve().parent.parent / "output" / "sample.gif"
-    if not gif.exists():
-        pytest.skip("demo asset not present")
-    data = gif.read_bytes()
-    assert media.frame_count(data) == 61
-    assert media.sniff(data).kind == "video"
+def test_frame_count_matches_the_container():
+    assert media.frame_count(_animated("GIF", frames=61)) == 61
+    assert media.frame_count(_encode("GIF", mode="P")) == 1
 
 
 def test_frame_count_is_one_for_undecodable_data():
     assert media.frame_count(b"not an image") == 1
 
 
-def test_real_project_media_is_typed_by_content_not_extension():
-    """output/male.png is really a JPEG. The extension must not be believed."""
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parent.parent
-    mislabelled = root / "output" / "male.png"
-    if not mislabelled.exists():
-        pytest.skip("demo asset not present")
-    assert media.sniff(mislabelled.read_bytes()[:64]).format == "jpeg"
+def test_mislabelled_extension_is_typed_by_content():
+    """This repo shipped an output/male.png that was really a JPEG. An
+    extension is a claim by the client; the first bytes are evidence."""
+    assert media.sniff(_encode("JPEG")).format == "jpeg"
+    assert media.sniff(_encode("PNG")).format == "png"
+    assert media.sniff(_encode("WEBP")).format == "webp"

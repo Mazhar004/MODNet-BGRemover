@@ -1,127 +1,114 @@
 # MODNet Background Remover
 
-## Application
+Remove the background from photos and videos in your browser. Everything runs
+locally — nothing is uploaded anywhere.
 
-A deep learning approach to remove background and adding new background image
+![Original and cut-out, for two sample portraits](docs/images/demo.png)
 
-- Remove background from **images,videos & live webcam**
-- Adding new background to those **images,videos & webcam footage**
+- Images and video, plus live camera capture
+- Transparent, solid colour, blurred, custom image, or raw alpha matte output
+- Draggable before/after comparison slider
+- Batch upload with a zip download
+- Runs on an NVIDIA GPU, an Apple GPU, or the CPU — switchable from the UI
 
-### Demo
+## Requirements
 
-<table>
-<tr align="center">
-<td><b>Before removing the background</b></td>
-<td><b>After replacing the background with new image</b></td>
-</tr>
-<tr align="center">
-<td><img src="assets/sample_image/male.jpeg" alt="Male.jpg" width="460" height="500"/></td>
-<td><img src="output/male.png" alt="Male.png" width="460" height="500"/></td>
-</tr>
-<tr align="center">
-<td><b>Before removing the background from video</b></td>
-<td><b>After replacing the background with new image in this video</b></td>
-</tr>
-<tr align="center">
-<td colspan=2><img src="output/sample.gif" alt="Video" width="920" height="400"/></td>
-</tr>
-<table>
+The MODNet checkpoints are not distributed with this repository. Download
+`modnet_photographic_portrait_matting.ckpt` and
+`modnet_webcam_portrait_matting.ckpt` and put them in `weights/`:
 
-### Web View
-<table>
-<tr align="center">
-<td><b>Before removing the background</b></td>
-<td><b>After removing the background</b></td>
-</tr>
-<tr align="center">
-<td><img src="assets/sample_image/female.jpeg" alt="Female.jpeg" width="460" height="500"/></td>
-<td><img src="output/web_view.png" alt="Female.png" width="460" height="500"/></td>
-</tr>
-<table>
+```
+weights/
+  modnet_photographic_portrait_matting.ckpt
+  modnet_webcam_portrait_matting.ckpt
+```
 
-## Installation
+Both files are verified against a pinned SHA-256 before they are loaded. A file
+that does not match is rejected rather than used.
 
-### Python Version
+## Run it with Docker
 
-- Python == 3.8
+```bash
+docker compose up --build
+```
 
-### Virtual Environment
+Open <http://localhost:8000>.
 
-#### Windows
+On a machine with an NVIDIA GPU:
 
-- `python -m venv venv`
-- `.\venv\Scripts\activate`
-- If any problem for scripts activation
-  - Execute following command in administration mode
-    - `Set-ExecutionPolicy Unrestricted -Force`
-  - Later you can revert the change
-    - `Set-ExecutionPolicy restricted -Force`
+```bash
+docker compose --profile cuda up --build web-cuda
+```
 
-#### Linux
+The CUDA image is roughly 6GB; the default CPU image is roughly 1.5GB. Neither
+contains the checkpoints — `weights/` is mounted read-only at runtime.
 
-- `python -m venv venv`
-- `source venv/bin/activate`
+## Run it without Docker
 
-### Library Installation
+```bash
+pip install -e ".[dev]"
+python -m flask --app "modnet_bg.web:create_app()" run --port 8000
+```
 
-- Library Install
-  - `pip install --upgrade pip`
-  - `pip install --upgrade setuptools`
-  - `pip install -r requirements.txt`
-  - To run in **web interface**
-    - `pip install -r web_requirements.txt`
+## Configuration
 
-### Pretrained Weights Download
-- [Weights Detail](pretrained/README.md)
+| Variable | Default | Meaning |
+|---|---|---|
+| `MODNET_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. `auto` prefers cuda, then mps, then cpu |
+| `MODNET_WEIGHTS_DIR` | `./weights` | where the checkpoints live |
+| `MODNET_WEIGHTS_URL_<KEY>` | unset | optional direct download URL per checkpoint |
+| `PORT` | `8000` | listen port |
+| `SECRET_KEY` | generated | set this in production |
+| `MODNET_MAX_IMAGE_MB` | `25` | image upload cap |
+| `MODNET_MAX_VIDEO_MB` | `250` | video upload cap |
+| `MODNET_MAX_VIDEO_SECONDS` | `120` | video duration cap |
+| `MODNET_MAX_WORKERS` | `2` | concurrent jobs |
+| `MODNET_JOB_TTL_SECONDS` | `3600` | how long results are kept |
 
+## Supported files
 
-## Inference
+Images: PNG, JPEG, WebP, BMP, TIFF, GIF. Video: MP4, WebM, AVI, MOV, and
+animated GIF.
 
-### Image
+Type is decided by the file's contents, not its extension, and multi-frame
+containers are routed by frame count — a one-frame GIF is treated as a picture,
+a sixty-frame GIF as a video.
 
-#### Single image
+Video output follows the mode: **Transparent** produces VP9 in WebM, because
+H.264 has no alpha channel. Every other mode produces H.264 in MP4 with the
+source's audio track carried over. Frame rate and dimensions always match the
+source.
 
-It will generate the output file in **output/** folder
+## About the GPU toggle
 
-- `python inference.py --image image_path` **[Without background image]**
-- `python inference.py --image image_path --background True` **[With background image]**
-- Example:
-  - `python inference.py --image assets/sample_image/female.jpeg`
-  - `python inference.py --image assets/sample_image/male.jpeg --background True`
+The device selector lists only what this machine actually has. Picking **CPU**
+forces processing onto the CPU even when a GPU is present, which is useful for
+comparison or when the GPU is busy. An unavailable choice falls back rather than
+failing, and each result reports which device processed it.
 
-#### Folder of images
+## About the live camera
 
-It will generate the output file in **output/** folder
+Camera matting runs one frame at a time through the model. Expect roughly **2–5
+frames per second on a CPU** and 15–30 on CUDA — the readout under the canvas
+shows the real measured rate. It is genuinely slow without a GPU.
 
-- `python inference.py --folder folder_path` **[Without background image]**
-- `python inference.py --folder folder_path --background True` **[With background image]**
-- Example:
-  - `python inference.py --folder assets/sample_image/`
-  - `python inference.py --folder assets/sample_image/ --background True`
+## Development
 
-### Video
+```bash
+pip install -e ".[dev]"
+pytest                              # runs without any checkpoint present
+ruff check modnet_bg tests
+ruff format --check modnet_bg tests
 
-It will generate the output file in **output/** folder
+pip freeze --exclude-editable > /tmp/reqs.txt
+pip-audit --strict --desc -r /tmp/reqs.txt
+```
 
-- `python inference.py --video video_path` **[Without background image]**
-- `python inference.py --video video_path --background True` **[With background image]**
-- Example:
-  - `python inference.py --video assets/sample_video/sample.mp4`
-  - `python inference.py --video assets/sample_video/sample.mp4 --background True`
+The test suite substitutes a fake model, so it needs neither the checkpoints nor
+a GPU. CI runs the same commands, plus builds both Docker images and smoke-tests
+the CPU one.
 
-### Webcam
+## Licence and credit
 
-- `python inference.py --webcam True` **[Without background image]**
-- `python inference.py --webcam True --background True` **[With background image]**
-
-### Webinterface
-
-- `python api.py`
-- Click on this [link/localhost](http://127.0.0.1:8000)
-- Upload the image and wait
-
-## Reference
-
-- [A Trimap-Free Solution for Portrait Matting in Real Time under Changing Scenes](https://github.com/ZHKKKe/MODNet)
-- Sample Female photo by <span><a href="https://unsplash.com/@michaeldam?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Michael Dam</a> on <a href="https://unsplash.com/?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
-- Sample Male photo by <span> <a href="https://unsplash.com/@erik_lucatero?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Erik Lucatero</a> on <a href="https://unsplash.com/?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
+MODNet is by Zhanghan Ke et al. The network in `modnet_bg/models/` is upstream
+code, vendored unchanged.

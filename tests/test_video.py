@@ -68,21 +68,21 @@ def test_probe_rejects_a_non_video(tmp_path):
         video.probe(bogus)
 
 
-def test_animated_gif_reads_through_ffmpeg():
+def test_animated_gif_reads_through_ffmpeg(tmp_path):
     """ffmpeg handles GIF; imageio's v3 plugin refuses it on extension alone."""
-    from pathlib import Path
+    from PIL import Image
 
-    gif = Path(__file__).resolve().parent.parent / "output" / "sample.gif"
-    if not gif.exists():
-        pytest.skip("demo asset not present")
+    gif = tmp_path / "anim.gif"
+    frames = [Image.new("RGB", (640, 360), (i * 4 % 256, 0, 0)) for i in range(61)]
+    frames[0].save(gif, format="GIF", save_all=True, append_images=frames[1:], duration=100, loop=0)
 
     info = video.probe(gif)
     assert info.frame_count == 61
     assert (info.width, info.height) == (640, 360)
 
-    frames = list(video.iter_frames(gif))
-    assert len(frames) == 61
-    assert frames[0].shape == (360, 640, 3)
+    read = list(video.iter_frames(gif))
+    assert len(read) == 61
+    assert read[0].shape == (360, 640, 3)
 
 
 def test_animated_webp_falls_back_to_pillow(animated_webp):
