@@ -123,6 +123,11 @@ input[type="color"] { padding: 4px; height: 40px; }
   grid-template-columns: 1fr auto;
   align-items: center;
 }
+/* Grid items stretch by default, which made the Download button span its
+   whole cell. Keep action controls at their natural width. */
+.queue-item > .button,
+.queue-item > a.button,
+.queue-item > progress + .button { justify-self: end; }
 .queue-item__name { font-weight: 600; word-break: break-all; }
 .queue-item__meta { color: var(--text-dim); font-size: 0.8rem; }
 .queue-item__preview { grid-column: 1 / -1; }
@@ -148,7 +153,10 @@ progress { width: 100%; height: 6px; grid-column: 1 / -1; }
   border-radius: var(--radius);
   touch-action: none;
   user-select: none;
-  max-height: 420px;
+  /* compare.js replaces this with the media's own ratio once it loads. */
+  aspect-ratio: 16 / 9;
+  max-height: 60vh;
+  margin: 0 auto;
 }
 .compare__layer { position: absolute; inset: 0; }
 .compare__layer img, .compare__layer video {

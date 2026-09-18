@@ -3,6 +3,28 @@
 (() => {
   "use strict";
 
+  /* Match the frame to the media's own aspect ratio.
+
+     Without this the wrapper keeps a fixed height and object-fit letterboxes
+     the result, so most of the checkerboard is dead space rather than actual
+     transparency -- which makes it hard to judge the cut-out. */
+  function adoptAspectRatio(wrapper, element) {
+    const apply = (w, h) => {
+      if (w > 0 && h > 0) wrapper.style.aspectRatio = `${w} / ${h}`;
+    };
+    if (element.tagName === "VIDEO") {
+      element.addEventListener(
+        "loadedmetadata",
+        () => apply(element.videoWidth, element.videoHeight),
+        { once: true },
+      );
+    } else {
+      const ready = () => apply(element.naturalWidth, element.naturalHeight);
+      if (element.complete && element.naturalWidth) ready();
+      else element.addEventListener("load", ready, { once: true });
+    }
+  }
+
   function mediaElement(source, kind) {
     if (kind === "video") {
       const video = document.createElement("video");
@@ -29,7 +51,9 @@
 
     const afterLayer = document.createElement("div");
     afterLayer.className = "compare__layer compare__layer--after";
-    afterLayer.append(mediaElement(after, kind));
+    const afterMedia = mediaElement(after, kind);
+    adoptAspectRatio(wrapper, afterMedia);
+    afterLayer.append(afterMedia);
 
     const beforeLayer = document.createElement("div");
     beforeLayer.className = "compare__layer compare__layer--before";
