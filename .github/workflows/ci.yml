@@ -32,6 +32,9 @@ jobs:
           python-version: "3.12"
           cache: pip
       # CPU wheels only: the runner has no GPU and the CUDA wheel is ~2.5GB.
+      - name: Upgrade build tooling
+        # The runner preinstalls setuptools 78.1.0 (PYSEC-2025-49, PYSEC-2026-3447).
+        run: pip install --upgrade pip "setuptools>=83"
       - name: Install CPU torch
         run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0 torchvision==0.29.0
       - run: pip install -e ".[dev]"
@@ -45,6 +48,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Upgrade build tooling
+        # The runner preinstalls setuptools 78.1.0 (PYSEC-2025-49, PYSEC-2026-3447).
+        run: pip install --upgrade pip "setuptools>=83"
       - name: Install CPU torch
         run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0 torchvision==0.29.0
       - run: pip install -e . pip-audit==2.10.1

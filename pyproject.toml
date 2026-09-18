@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools>=77"]
+# >=83 clears PYSEC-2025-49 (PackageIndex path traversal, fixed 78.1.1) and
+# PYSEC-2026-3447 (MANIFEST.in NFD/NFC exclusion bypass, fixed 83.0.0).
+requires = ["setuptools>=83"]
 build-backend = "setuptools.build_meta"
 
 [project]

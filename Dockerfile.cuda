@@ -22,8 +22,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 
 # Default index: the CUDA-enabled wheels.
+# setuptools>=83 clears PYSEC-2025-49 and PYSEC-2026-3447, which the
+# base image's preinstalled 78.1.0 carries.
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install torch==2.14.0 torchvision==0.29.0
+RUN pip install --upgrade pip "setuptools>=83" \
+ && pip install torch==2.14.0 torchvision==0.29.0
 
 COPY modnet_bg ./modnet_bg
 RUN pip install .

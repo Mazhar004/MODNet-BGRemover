@@ -83,3 +83,17 @@ def test_cuda_image_is_also_non_root(cuda_dockerfile):
 def test_cuda_profile_is_gated_in_compose(compose):
     assert 'profiles: ["cuda"]' in compose
     assert "capabilities: [gpu]" in compose
+
+
+@pytest.mark.parametrize("name", ["Dockerfile", "Dockerfile.cuda"])
+def test_images_upgrade_setuptools(name):
+    """The python base images ship setuptools 78.1.0, which carries a
+    PackageIndex path traversal (PYSEC-2025-49, fixed 78.1.1) and a MANIFEST.in
+    exclusion bypass (PYSEC-2026-3447, fixed 83.0.0)."""
+    content = (ROOT / name).read_text()
+    assert "setuptools>=83" in content, f"{name} ships a vulnerable setuptools"
+
+
+def test_build_requirement_excludes_vulnerable_setuptools():
+    pyproject = (ROOT / "pyproject.toml").read_text()
+    assert 'requires = ["setuptools>=83"]' in pyproject

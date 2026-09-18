@@ -16,6 +16,12 @@ WORKDIR /app
 
 # The CPU torch wheel is roughly a quarter the size of the CUDA one. Install it
 # first so the slow layer is cached independently of the application code.
+# The python base image ships setuptools 78.1.0, which carries a
+# PackageIndex path traversal (PYSEC-2025-49) and a MANIFEST.in exclusion
+# bypass (PYSEC-2026-3447). Nothing here needs setuptools at runtime, but a
+# vulnerable copy should not sit in the shipped image.
+RUN pip install --upgrade pip "setuptools>=83"
+
 COPY pyproject.toml ./
 RUN pip install --index-url https://download.pytorch.org/whl/cpu \
         torch==2.14.0 torchvision==0.29.0

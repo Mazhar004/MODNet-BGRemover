@@ -78,3 +78,10 @@ def test_audit_keeps_strict(workflow):
     """Without --strict a dependency that cannot be resolved is a warning, and
     the job would go green having audited nothing."""
     assert "pip-audit --strict" in workflow
+
+
+def test_ci_upgrades_setuptools_before_auditing(workflow):
+    """The runner preinstalls setuptools 78.1.0, which has two advisories. The
+    audit job would otherwise fail on the runner's own tooling."""
+    audit = workflow.split("  audit:")[1].split("\n  images:")[0]
+    assert "setuptools>=83" in audit
