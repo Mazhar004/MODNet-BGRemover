@@ -1976,7 +1976,8 @@ everything else to H.264/MP4 with the original audio muxed back."
   - `JobCancelled` exception.
   - `Job` with `id`, `status`, `kind`, `filename`, `progress`, `frames_done`, `frames_total`,
     `device_used`, `result_path`, `result_name`, `error`, `created_at`, `finished_at`;
-    methods `set_total(n)`, `advance()`, `raise_if_cancelled()`, `to_dict()`.
+    methods `set_total(n)`, `advance()`, `cancel()`, `raise_if_cancelled()`, `to_dict()`.
+    Cancellation flag is the public `cancel_event`; callers use `job.cancel()`.
   - `JobRegistry(max_workers, ttl_seconds)` with `submit(fn, *, kind, filename) -> Job`,
     `get(job_id) -> Job`, `cancel(job_id) -> Job`, `reap() -> int`, `shutdown()`.
   - The submitted callable has signature `fn(job: Job) -> tuple[Path, str]` returning
@@ -2276,7 +2277,7 @@ class JobRegistry:
 
     def cancel(self, job_id: str) -> Job:
         job = self.get(job_id)
-        job._cancel.set()
+        job.cancel()
         if job.status == "queued":
             job.status = "cancelled"
             job.finished_at = time.time()
@@ -2429,7 +2430,7 @@ def test_video_job_sets_total_and_advances_per_frame(fake_pipeline, tiny_video):
 
 def test_video_job_honours_cancellation(fake_pipeline, tiny_video):
     job = _job(kind="video")
-    job._cancel.set()
+    job.cancel()
     run = fake_pipeline.video_job(tiny_video, ProcessOptions(mode="color"), stem="clip")
 
     with pytest.raises(JobCancelled):
