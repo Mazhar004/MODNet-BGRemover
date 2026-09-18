@@ -10,10 +10,10 @@ Web-only background remover for photos and video. No CLI.
 
 ## Current work
 
-Rebuild in progress on `feat/web-only-rebuild`:
+Rebuild complete on `feat/web-only-rebuild`. 192 tests, no known vulnerabilities.
 
 - Spec: `docs/superpowers/specs/2026-09-17-web-bgremover-design.md`
-- Plan: `docs/superpowers/plans/2026-09-17-web-only-rebuild.md` (20 TDD tasks)
+- Plan: `docs/superpowers/plans/2026-09-17-web-only-rebuild.md`
 
 ## Invariants
 
@@ -32,12 +32,23 @@ These are decisions, not preferences. Changing one needs a reason.
   `FakeMatteModel`. A test that needs real weights must skip, never fail CI.
 - **Checkpoints are never committed or baked into an image.** `weights/` is
   gitignored and bind-mounted.
+- **`modnet_bg/models/` is vendored upstream code.** Excluded from both the
+  linter and the formatter so upstream diffs stay readable. Do not restyle it.
+- **Media type comes from magic bytes, and image-vs-video from frame count.**
+  A one-frame GIF is a picture; a sixty-frame GIF is a video.
 
 ## Commands
 
 ```bash
 pip install -e ".[dev]"
 pytest
-ruff check modnet_bg tests
+ruff check modnet_bg tests && ruff format --check modnet_bg tests
 docker compose up --build        # http://localhost:8000
+```
+
+Dependency audit needs the frozen-env form — auditing the environment directly
+makes `--strict` fail on our own package, which is not on PyPI:
+
+```bash
+pip freeze --exclude-editable > /tmp/reqs.txt && pip-audit --strict --desc -r /tmp/reqs.txt
 ```
