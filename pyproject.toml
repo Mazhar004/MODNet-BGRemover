@@ -48,4 +48,7 @@ select = ["E", "F", "I", "B", "UP", "S"]
 ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
+# Vendored upstream network: not ours to restyle.
 "modnet_bg/models/**" = ["ALL"]
+# Tests assert on literal secrets and poke private attributes on purpose.
+"tests/**" = ["S105", "S106", "SLF001"]
