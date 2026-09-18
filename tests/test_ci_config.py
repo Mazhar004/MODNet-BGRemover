@@ -55,3 +55,26 @@ def test_workflow_is_valid_yaml(workflow):
         pytest.skip("pyyaml not installed")
     parsed = yaml.safe_load(workflow)
     assert set(parsed["jobs"]) == {"lint", "test", "audit", "images"}
+
+
+def test_audit_strips_local_version_segments(workflow):
+    """On Linux the CPU wheel installs as torch==2.14.0+cpu, and that exact
+    string exists only on download.pytorch.org. pip-audit resolves against
+    PyPI, so the frozen file must drop the +local segment or the job fails
+    with 'No matching distribution found for torch==2.14.0+cpu'."""
+    audit = workflow.split("  audit:")[1].split("\n  images:")[0]
+    # Match the command, not the word: the explanatory comment above it also
+    # says "sed", which made an earlier version of this assertion vacuous.
+    command_lines = [
+        line for line in audit.splitlines() if line.strip() and not line.strip().startswith("#")
+    ]
+    body = "\n".join(command_lines)
+    assert "sed -E" in body, "frozen requirements are not stripped of +local segments"
+    assert "[A-Za-z0-9.]*$" in body, "the local-segment pattern is missing"
+    assert "requirements-audit.txt" in body
+
+
+def test_audit_keeps_strict(workflow):
+    """Without --strict a dependency that cannot be resolved is a warning, and
+    the job would go green having audited nothing."""
+    assert "pip-audit --strict" in workflow

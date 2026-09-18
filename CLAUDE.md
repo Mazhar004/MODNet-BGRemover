@@ -46,9 +46,12 @@ ruff check modnet_bg tests && ruff format --check modnet_bg tests
 docker compose up --build        # http://localhost:8000
 ```
 
-Dependency audit needs the frozen-env form — auditing the environment directly
-makes `--strict` fail on our own package, which is not on PyPI:
+Dependency audit needs the frozen-env form. Auditing the environment directly
+makes `--strict` fail on our own package, which is not on PyPI; the `sed` strips
+PEP 440 local segments, because the Linux CPU wheel is `torch==2.14.0+cpu` and
+that exact string exists only on download.pytorch.org:
 
 ```bash
-pip freeze --exclude-editable > /tmp/reqs.txt && pip-audit --strict --desc -r /tmp/reqs.txt
+pip freeze --exclude-editable | sed -E 's/\+[A-Za-z0-9][A-Za-z0-9.]*$//' > /tmp/reqs.txt
+pip-audit --strict --desc -r /tmp/reqs.txt
 ```

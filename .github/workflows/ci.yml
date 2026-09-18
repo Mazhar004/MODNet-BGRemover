@@ -52,9 +52,17 @@ jobs:
       # too, not just the pins in pyproject.toml. --exclude-editable drops our
       # own package, which is not on PyPI; auditing the env directly would make
       # --strict fail on it rather than on a real finding.
+      #
+      # The sed strips PEP 440 local version segments. On Linux the CPU wheel
+      # installs as torch==2.14.0+cpu, and that exact string exists only on
+      # download.pytorch.org -- pip-audit resolves against PyPI and fails to
+      # find it. Advisories are keyed on the upstream version, so 2.14.0 is
+      # both resolvable and the correct thing to audit.
       - name: Audit dependencies
         run: |
-          pip freeze --exclude-editable > /tmp/requirements-audit.txt
+          pip freeze --exclude-editable \
+            | sed -E 's/\+[A-Za-z0-9][A-Za-z0-9.]*$//' \
+            > /tmp/requirements-audit.txt
           pip-audit --strict --desc -r /tmp/requirements-audit.txt
 
   images:

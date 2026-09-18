@@ -100,7 +100,7 @@ pytest                              # runs without any checkpoint present
 ruff check modnet_bg tests
 ruff format --check modnet_bg tests
 
-pip freeze --exclude-editable > /tmp/reqs.txt
+pip freeze --exclude-editable | sed -E 's/\+[A-Za-z0-9][A-Za-z0-9.]*$//' > /tmp/reqs.txt
 pip-audit --strict --desc -r /tmp/reqs.txt
 ```
 
