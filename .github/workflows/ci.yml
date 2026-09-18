@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly. This is what catches a CVE published against a pin we already have.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.16.8
+      - run: ruff check modnet_bg tests
+      - run: ruff format --check modnet_bg tests
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # CPU wheels only: the runner has no GPU and the CUDA wheel is ~2.5GB.
+      - name: Install CPU torch
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0 torchvision==0.29.0
+      - run: pip install -e ".[dev]"
+      # No checkpoints on the runner. The suite must be green regardless.
+      - run: pytest --cov=modnet_bg --cov-report=term-missing
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CPU torch
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0 torchvision==0.29.0
+      - run: pip install -e . pip-audit==2.10.1
+      # Audit the frozen environment, so transitive dependencies are covered
+      # too, not just the pins in pyproject.toml. --exclude-editable drops our
+      # own package, which is not on PyPI; auditing the env directly would make
+      # --strict fail on it rather than on a real finding.
+      - name: Audit dependencies
+        run: |
+          pip freeze --exclude-editable > /tmp/requirements-audit.txt
+          pip-audit --strict --desc -r /tmp/requirements-audit.txt
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the CPU image
+        run: docker build -t modnet-bgremover:cpu .
+      - name: Smoke-test the CPU image
+        run: |
+          docker run --rm -d --name bgr -p 8000:8000 -e SECRET_KEY=ci modnet-bgremover:cpu
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:8000/health | grep -q '"status":"ok"'
+          curl -fsS http://localhost:8000/api/capabilities | grep -q 'cpu'
+          docker stop bgr
+      - name: Build the CUDA image
+        # Built but never run: the runner has no GPU. This catches a broken
+        # Dockerfile, which is the failure mode we can actually check here.
+        run: docker build -f Dockerfile.cuda -t modnet-bgremover:cuda .

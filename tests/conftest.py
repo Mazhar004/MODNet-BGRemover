@@ -117,7 +117,5 @@ def fake_pipeline(tmp_path, engine_factory, monkeypatch):
     monkeypatch.setattr(
         pipeline_module.weights, "resolve_weights", lambda key, **kw: tmp_path / f"{key}.ckpt"
     )
-    settings = load_settings(
-        {"MODNET_DATA_DIR": str(tmp_path / "data"), "MODNET_DEVICE": "cpu"}
-    )
+    settings = load_settings({"MODNET_DATA_DIR": str(tmp_path / "data"), "MODNET_DEVICE": "cpu"})
     return Pipeline(settings, engine_factory=engine_factory)

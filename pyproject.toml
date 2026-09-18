@@ -46,6 +46,11 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "S"]
 ignore = ["S101"]
 
+[tool.ruff.format]
+# per-file-ignores governs the linter only. Without this the formatter
+# restyles the vendored network too, which makes upstream diffs unreadable.
+exclude = ["modnet_bg/models/**"]
+
 [tool.ruff.lint.per-file-ignores]
 # Vendored upstream network: not ours to restyle.
 "modnet_bg/models/**" = ["ALL"]

@@ -30,9 +30,7 @@ def test_resolves_first_matching_dir(tmp_path, monkeypatch):
     second.mkdir()
     spec = w.WEIGHTS["photographic"]
     digest = _write(second / spec.filename, b"payload")
-    monkeypatch.setitem(
-        w.WEIGHTS, "photographic", spec.__class__(spec.key, spec.filename, digest)
-    )
+    monkeypatch.setitem(w.WEIGHTS, "photographic", spec.__class__(spec.key, spec.filename, digest))
 
     found = w.resolve_weights("photographic", search_dirs=[first, second])
     assert found == second / spec.filename
