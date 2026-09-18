@@ -1,5 +1,91 @@
 <!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8"><title>Background Remover</title></head>
-  <body><main id="app">Loading…</main></body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Background Remover</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<header class="masthead">
+  <h1>Background Remover</h1>
+  <p class="subtitle">Drop in a photo or a video. Everything runs on this machine.</p>
+</header>
+
+<main class="layout">
+  <section class="panel" aria-labelledby="upload-heading">
+    <h2 id="upload-heading">1 &middot; Choose files</h2>
+
+    <div id="drop-zone" class="drop-zone" tabindex="0"
+         role="button" aria-describedby="drop-hint">
+      <p class="drop-zone__title">Drag files here</p>
+      <p id="drop-hint" class="drop-zone__hint">or use the button below. Images and video.</p>
+    </div>
+
+    <label class="field" for="file-input">Files</label>
+    <input id="file-input" type="file" multiple accept="image/*,video/*">
+  </section>
+
+  <section class="panel" aria-labelledby="options-heading">
+    <h2 id="options-heading">2 &middot; Choose a background</h2>
+
+    <label class="field" for="mode">Output</label>
+    <select id="mode">
+      <option value="transparent">Transparent</option>
+      <option value="color">Solid colour</option>
+      <option value="blur">Blurred original</option>
+      <option value="image">Your own image</option>
+      <option value="matte">Alpha matte only</option>
+    </select>
+
+    <div class="option-row" data-when-mode="color">
+      <label class="field" for="color">Colour</label>
+      <input id="color" type="color" value="#ffffff">
+    </div>
+
+    <div class="option-row" data-when-mode="blur">
+      <label class="field" for="blur-radius">Blur strength</label>
+      <input id="blur-radius" type="range" min="1" max="100" value="24">
+    </div>
+
+    <div class="option-row" data-when-mode="image">
+      <label class="field" for="background-input">Background image</label>
+      <input id="background-input" type="file" accept="image/*">
+    </div>
+
+    <label class="field" for="device">Processing device</label>
+    <select id="device"><option value="auto">Auto</option></select>
+    <p id="device-note" class="hint"></p>
+  </section>
+
+  <section class="panel panel--wide" aria-labelledby="queue-heading">
+    <h2 id="queue-heading">3 &middot; Results</h2>
+    <div class="queue-actions">
+      <button id="start" type="button" class="button button--primary">Remove backgrounds</button>
+      <button id="download-all" type="button" class="button" hidden>Download all as zip</button>
+      <button id="clear" type="button" class="button" hidden>Clear</button>
+    </div>
+    <p id="status-region" class="status" role="status" aria-live="polite"></p>
+    <ul id="queue" class="queue"></ul>
+  </section>
+
+  <section class="panel panel--wide" id="webcam-panel" aria-labelledby="webcam-heading">
+    <h2 id="webcam-heading">Live camera</h2>
+    <p class="hint">
+      Runs frame by frame on this machine. Expect a few frames per second on a
+      CPU, and smooth video only with a GPU.
+    </p>
+    <div class="queue-actions">
+      <button id="webcam-start" type="button" class="button">Start camera</button>
+      <button id="webcam-stop" type="button" class="button" disabled>Stop camera</button>
+      <span id="webcam-fps" class="hint" role="status" aria-live="polite"></span>
+    </div>
+    <canvas id="webcam-canvas" class="checker webcam-canvas" width="640" height="480"></canvas>
+  </section>
+</main>
+
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/compare.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/webcam.js') }}" defer></script>
+</body>
 </html>

@@ -46,6 +46,10 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
     app.register_blueprint(pages)
     app.register_blueprint(api, url_prefix="/api")
 
+    from .realtime import register_realtime
+
+    register_realtime(app)
+
     _register_error_handlers(app)
     return app
 
